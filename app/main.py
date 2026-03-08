@@ -11,9 +11,18 @@ def main():
 
     with connection:
         request = connection.recv(1024)
-        response = bytearray(8)
-        response[0:4] = request[0:4]
-        response[4:] = request[8:12]
+
+        message_size = struct.unpack(">i", request[:4])[0]
+        request_api_key = struct.unpack(">h", request[4:6])[0]
+        request_api_version = struct.unpack(">h", request[6:8])[0]
+        correlation_id = struct.unpack(">i", request[8:12])[0]
+
+        error_code = 0 if 0 <= request_api_version <= 4 else 35
+        response = bytearray(10)
+        response[0:4] = struct.pack(">i", 0)
+        response[4:8] = struct.pack(">i", correlation_id)
+        response[8:10] = struct.pack(">h", error_code)
+
         connection.sendall(response)
 
 if __name__ == "__main__":
